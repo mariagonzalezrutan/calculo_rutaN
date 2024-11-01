@@ -1,0 +1,12 @@
+trigger:
+  branches:
+    include:
+      - main  # Ajusta el branch según sea necesario
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: |
+    python cal.py
+  displayName: 'Ejecutar script para actualizar Work Item'
