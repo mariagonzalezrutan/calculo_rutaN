@@ -1,0 +1,35 @@
+name: Ejecutar Azure DevOps Script
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Comprobar el repositorio
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Configurar Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    # Instalar dependencias
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install azure-devops
+
+    # Ejecutar el script de Python
+    - name: Run Azure DevOps script
+      env:
+        AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+      run: |
+        python cal.py
