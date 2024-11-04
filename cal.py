@@ -1,24 +1,27 @@
 from azure.devops.connection import Connection
 from msrest.authentication import BasicAuthentication
 from azure.devops.v7_0.work_item_tracking.models import Wiql, JsonPatchOperation
-import os
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Configurar las credenciales de Azure DevOps
-personal_access_token = os.getenv('AZURE_DEVOPS_PAT')
-organization_url = 'https://dev.azure.com/CorporacionRutaN'
-
-credentials = BasicAuthentication('', personal_access_token)
-connection = Connection(base_url=organization_url, creds=credentials)
-
-core_client = connection.clients.get_core_client()
-wit_client = connection.clients.get_work_item_tracking_client()
-
 @app.route('/update_work_items', methods=['POST'])
 def update_work_items():
     try:
+        # Obtener el token de acceso del encabezado de la solicitud
+        personal_access_token = request.headers.get('Authorization')
+        if not personal_access_token:
+            return jsonify({'error': 'Token de acceso es obligatorio'}), 401
+
+        # Configurar la conexión con Azure DevOps
+        organization_url = 'https://dev.azure.com/CorporacionRutaN'
+        credentials = BasicAuthentication('', personal_access_token)
+        connection = Connection(base_url=organization_url, creds=credentials)
+
+        core_client = connection.clients.get_core_client()
+        wit_client = connection.clients.get_work_item_tracking_client()
+
+        # Obtener el nombre del proyecto desde el cuerpo de la solicitud
         project_name = request.json.get('project_name')
         if not project_name:
             return jsonify({'error': 'El nombre del proyecto es obligatorio'}), 400
@@ -26,8 +29,6 @@ def update_work_items():
         projects = core_client.get_projects()
         for project in projects:
             if project.name == project_name:
-                print(f"Proyecto: {project.name}")
-
                 query = Wiql(query=f"SELECT [System.Id], [System.Title], [System.State] FROM workitems WHERE [System.TeamProject] = '{project.name}'")
                 work_items_query_result = wit_client.query_by_wiql(wiql=query)
 
@@ -48,7 +49,6 @@ def update_work_items():
                         if cantidad is not None and meses is not None and valor_unitario is not None:
                             valor_total_estimado = cantidad * meses * valor_unitario
                             valor_total_formateado = valor_total_estimado
-                            print(f"    Calculando Valor Total Estimado: {valor_total_formateado}")
 
                             try:
                                 update_document = [
@@ -66,11 +66,10 @@ def update_work_items():
                                     'work_item_id': wi.id,
                                     'valor_total_estimado': valor_total_formateado
                                 })
-                                print(f"    Valor Total Estimado actualizado en el work item ID {wi.id}: {valor_total_formateado}")
                             except Exception as e:
-                                print(f"    Error al actualizar el work item ID {wi.id}: {e}")
+                                print(f"Error al actualizar el work item ID {wi.id}: {e}")
                         else:
-                            print(f"    No se encontraron suficientes datos para calcular el valor total estimado para el work item ID {wi.id}")
+                            print(f"No se encontraron suficientes datos para calcular el valor total estimado para el work item ID {wi.id}")
 
                     return jsonify({'updated_items': updated_items}), 200
                 else:
