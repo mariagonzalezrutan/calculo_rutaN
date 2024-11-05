@@ -33,24 +33,17 @@ for project in projects:
         work_item_ids = [item.id for item in work_items_query_result.work_items]
         
         if work_item_ids:
-            # Obtener todos los campos de los work items usando expand='All'
             work_items = wit_client.get_work_items(ids=work_item_ids, expand='All')
             
-            # Mostrar los work items
             for wi in work_items:
                 cantidad = wi.fields.get('Custom.Cantidad')
                 meses = wi.fields.get('Custom.Meses')
                 valor_unitario = wi.fields.get('Custom.Valorunitario')
 
                 if cantidad is not None and meses is not None and valor_unitario is not None:
-                    # Calcular el valor total estimado
                     valor_total_estimado = cantidad * meses * valor_unitario
-
-                    # Formatear el valor total como moneda en pesos colombianos
                     valor_total_formateado = valor_total_estimado
                     print(f"    Calculando Valor Total Estimado: {valor_total_formateado}")
-                    
-                    # Actualizar el campo Valor Total Estimado en Azure DevOps
                     try:
                         update_document = [
                             JsonPatchOperation(
@@ -63,11 +56,11 @@ for project in projects:
                             document=update_document,
                             id=wi.id
                         )
-                        print(f"    Valor Total Estimado actualizado en el work item ID {wi.id}: {valor_total_formateado}")
+                        print(f" Valor Total Estimado actualizado en el work item ID {wi.id}: {valor_total_formateado}")
                     except Exception as e:
                         print(f"    Error al actualizar el work item ID {wi.id}: {e}")
                 else:
-                    print(f"    No se encontraron suficientes datos para calcular el valor total estimado para el work item ID {wi.id}")
+                    print(f" No se encontraron suficientes datos para calcular el valor total estimado para el work item ID {wi.id}")
 
                 print("====================================")
         else:
